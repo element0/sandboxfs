@@ -1,0 +1,40 @@
+SANDBOX FS
+
+2023-01-03 Raygan Henley
+
+
+DESCRIPTION
+
+Run an arbitrary pyfilesystem instance inside a docker container. Isolate any side-effects of the pyfilesystem instance to the container. IO is proxied over a UNIX socket leading to/from the container. The SandboxFS wraps the socket IO in a pyfilesystem FS object.
+
+
+USAGE
+
+The following sources need to be defined on the host.
+
+    - TARGET FS DIR eg. "path/to/target_fs_dir"
+    - SOCKET DIR eg. "path/to/socket"
+
+Inside the python code,
+
+    from sandboxfs import SandboxFS
+
+    target_fs_dir_path = "path/to/target_fs_dir"
+    socket_dir_path = "path/to/socket"
+
+    a = SandboxFS(target_fs_dir_path, socket_dir_path)
+
+    a.listdir("/")
+
+
+## Implementation
+
+The target filesystem is definied in its own TARGET FS DIRECTORY. It must include "target_fs.py" and "requirements.txt", and any other support files for the "target_fs" object implemented within target_fs.py.
+
+The name of the directory identifies the file system. A socket with a name derived from the file system will be created in a SOCKET DIRECTORY.
+
+A docker container will be launched and the TARGET FS DIRECTORY mounted within it. The Target FS will be instantiated inside the container and proxied over a socket.
+
+The SandboxFS object wraps the socket inside a pysfilesystem interface. Commands are passed over the socket and translated into pyfilesystem calls at the other side.
+
+
