@@ -5,35 +5,65 @@ from fs.path import basename
 import json
 import os
 from time import sleep
+import logging
 
 
 MAXBUFSIZE=8192
 
+logging.basicConfig(filename="logs/sandboxfs_instances.log",
+                    level=logging.DEBUG
+                    )
+#, encoding='utf-8',level=logging.DEBUG)
+                    #format='%(asctime)s %(message)s')
+                    #datefmt='%m/%d/%Y %I:%M:%S %p')
+
 
 class SandboxFS(FS):
-    def __init__(self,targetfsdir,socketdir):
-        os.system(f"/bin/bash bin/start_container.sh {targetfsdir}")
-        sleep(3)
 
+    def __init__(self,targetfsdir,socketdir):
+        
         target_fs_name = basename(targetfsdir)
         sockaddr = f"{socketdir}/{target_fs_name}.sock"
 
+        self.target_fs_name = target_fs_name
+        
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        try:
-            self.sock.connect(sockaddr)
-        except:
-            print(f"SocketFS::__init__ can't connect to socket {sockaddr}")
+        self.sock.settimeout(3)
+
+        if not os.path.exists(sockaddr):
+            os.system(f"/bin/bash bin/start_container.sh {targetfsdir}")
+            while not os.path.exists(sockaddr):
+                sleep(1)
+
+            while True:
+                try:
+                    self.sock.connect(sockaddr)
+                    break
+                except:
+                    sleep(1)
+        else:
+            try:
+                self.sock.connect(sockaddr)
+            except ConnectionRefusedError as err:
+                os.system(f"/bin/bash bin/start_container.sh {targetfsdir}")
+                while True:
+                    try:
+                        self.sock.connect(sockaddr)
+                        break
+                    except:
+                        sleep(1)
         super().__init__()
 
     def close(self):
         self.sock.close()
 
     def send_rq(self, rq):
-        print(rq)
+        logging.debug(f'{self.target_fs_name}:request: {rq}')
         self.sock.sendall(rq.encode())
 
         res = self.sock.recv(MAXBUFSIZE)
-        print(res)
+        logging.debug(f'{self.target_fs_name}:result: {res}')
+
 
         return res
 

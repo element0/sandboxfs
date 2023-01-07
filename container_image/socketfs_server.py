@@ -1,9 +1,10 @@
-#!./bin/python
+#!/bin/python
 
 # import docker
 from fs import open_fs
 from fs.errors import ResourceNotFound
 import json
+import logging
 
 import socket
 import sys
@@ -28,6 +29,14 @@ from target_fs import target_fs
 SOCKETNAME=os.environ['TARGETFSNAME']
 
 SERVER_ADDRESS = f'./socket/{SOCKETNAME}.sock'
+LOG_ADDRESS = f'./logs/{SOCKETNAME}.log'
+
+logging.basicConfig(filename=LOG_ADDRESS,
+                    encoding='utf-8',
+                    level=logging.DEBUG,
+                    format='%(asctime)s %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p'
+                   )
 
 open_files = dict()
 NEXT_FD = 1
@@ -70,11 +79,11 @@ def main():
                     rq = json.loads(cleaned)
 
                     for verb in rq:
-                        print(f"verb: {verb}")
+                        logging.debug(f"verb: {verb}")
                         argv = rq[verb]
                         res = "OK"
                         for arg in argv:
-                            print(f"arg: {arg}")
+                            logging.debug(f"arg: {arg}")
 
                         if verb == "ls":
                             res = json.dumps(target_fs.listdir(arg))
@@ -117,19 +126,21 @@ def main():
                         if verb == "rmdir":
                             target_fs.removedir(*argv)
 
-                        print(res)
+                        logging.debug(res)
                         if type(res) == bytes:
                             connection.send(res)
                         else:
-                            connection.send(res.encode())
-                            connection.send('\n'.encode())
+                            connection.send(res.encode()+'\n'.encode())
                 else:
                     break
         finally:
             connection.close()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as err:
+        logging.exception(err)
 
 
 # EOF
