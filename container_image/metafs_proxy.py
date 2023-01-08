@@ -36,15 +36,21 @@ class MetaFSProxy(FS):
         self.metafs.makedir(path, permissions, recreate)
 
     def listdir(self, path):
-        
-        pass
+        """Very immature. Only adds inodes. Does not remove missing nodes. Relies on metafs to remain in sync via 'remove()' and 'removedir()' methods."""
+        elements = self.targetfs.listdir(path)
+        for filename in elements:
+            childpath = f'{path}/{filename}'
+            self.metafs.makeinode(childpath)
+        return elements
 
     def openbin(self, path, mode='r', buffering=-1, **options):
-        pass
+        return self.targetfs.openbin(path, mode, buffering, **options)
 
     def remove(self, path):
-        pass
+        self.targetfs.remove(path)
+        self.metafs.remove(path)
 
     def removedir(self, path):
-        pass
+        self.targetfs.removedir(path)
+        self.metafs.removedir(path)
 
