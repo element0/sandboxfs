@@ -3,15 +3,19 @@
 from sandboxfs import SandboxFS
 from time import sleep
 
-a = SandboxFS("osfs_sample", "socket")
+fs_confdir_a = "osfs_sample-a"
+fs_confdir_b = "osfs_sample-b"
+socket_dir = "socket"
+
+a = SandboxFS(fs_confdir_a, socket_dir)
 print(a.listdir('/'))
 
-b = SandboxFS("/home/raygan/raygan-sshfs-private", "socket")
+b = SandboxFS(fs_confdir_b, socket_dir)
 print(b.listdir('/'))
-
-sleep(1)
 
 # once more
-
-print(a.listdir('/'))
-print(b.listdir('/'))
+"""
+for i in range(1,100):
+    a.listdir('/')
+    b.listdir('/')
+"""

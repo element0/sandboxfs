@@ -24,7 +24,14 @@ import ipaddress
 
 # ---- GLOBALS ----
 sys.path.append("/home/sandboxfs/target_fs")
-from target_fs import target_fs
+from metafs import MetaFS
+from metafs_proxy import MetaFSProxy
+from target_fs import target_fs as target_fs_origin
+
+metafs = MetaFS("/home/sandboxfs/target_fs/config-target-metafs.sh")
+target_fs = MetaFSProxy(target_fs_origin, metafs)
+
+
 
 SOCKETNAME=os.environ['TARGETFSNAME']
 
